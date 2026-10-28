@@ -2,7 +2,7 @@
 
 A **personal learning project**: a Playwright (JavaScript, CommonJS) test framework for a multi-step flight-booking demo. It is a portfolio piece, not professional production experience.
 
-> **Status:** the suite was authored in an environment **without network access**. Tests were collected (`playwright test --list`) but **have not been executed against the live site**. Treat all tests as *unverified* until you run them (see [Known limitations](#known-limitations)).
+> **Latest local verification:** all 17 tests passed in a full run against the live site. The suite depends on a third-party site, so network or site instability can still cause intermittent failures; see [Known limitations](#known-limitations).
 
 ## Application under test
 
@@ -70,7 +70,7 @@ npx playwright install chromium  # add --with-deps on Linux
 
 ## GitHub Actions
 
-`.github/workflows/playwright.yml` runs on push/PR to `main` and manually (`workflow_dispatch`). It checks out, sets up Node 22 with npm cache, runs `npm ci`, installs Chromium with OS dependencies, runs `npm test`, then uploads the report and `test-results` (14-day retention) even when tests fail. Permissions are `contents: read`. **Requires `package-lock.json` to be committed.** The workflow has not been run yet.
+`.github/workflows/playwright.yml` runs on push/PR to `main` and manually (`workflow_dispatch`). It checks out, sets up Node 22 with npm cache, runs `npm ci`, installs Chromium with OS dependencies, runs `npm test`, then uploads the report and `test-results` (14-day retention) even when tests fail. Tests run headless by default; use `npm run test:headed` for a visible local browser. Permissions are `contents: read`. **Requires `package-lock.json` to be committed.** Check the GitHub Actions tab for the latest workflow result.
 
 ## Supported test scenarios
 
@@ -78,7 +78,8 @@ npx playwright install chromium  # add --with-deps on Linux
 
 ## Known limitations
 
-- **Not yet executed** against the live site; some assertions rest on assumptions flagged in code comments: fare text contains a currency symbol (TC06), non-stop rows contain "non-stop" (TC07), total text is a single number (TC10).
+- The live practice site is outside this project's control. Slow responses, outages, or UI changes can cause intermittent failures; inspect the saved trace and report before treating a failure as a test bug.
+- Some assertions still rest on assumptions flagged in code comments: fare text contains a currency symbol (TC06), non-stop rows contain "non-stop" (TC07), and total text is a single number (TC10).
 - Validation **message text and selectors were not verified**, so negative tests assert that the wizard does *not advance* rather than checking the message. Tighten them after inspecting the DOM (`npx playwright codegen https://www.qapractice.com/flight-booking-scenarios`).
 - Round-trip booking (site TC02) and passenger-count boundaries are not automated.
 - The first listed flight is selected rather than a fixed flight number, because only `GW100` is documented and its route is unknown.

@@ -15,7 +15,8 @@ class FlightSearchPage {
   }
 
   async goto() {
-    await this.page.goto(bookingPath);
+    await this.page.goto(bookingPath, { waitUntil: 'domcontentloaded' });
+    await this.searchButton.waitFor({ state: 'visible' });
   }
 
   async setOneWay(isOneWay) {
@@ -24,12 +25,12 @@ class FlightSearchPage {
 
   /** Fills the form without submitting. Return date is only touched for round trips. */
   async fillSearch({ from, to, departureDate, returnDate, passengers, travelClass, oneWay }) {
+    if (oneWay !== undefined) await this.setOneWay(oneWay);
     if (from) await this.fromSelect.selectOption(from);
     if (to) await this.toSelect.selectOption(to);
     if (departureDate) await this.departureDate.fill(departureDate);
     if (passengers) await this.passengers.fill(String(passengers));
     if (travelClass) await this.travelClass.selectOption(travelClass);
-    if (oneWay !== undefined) await this.setOneWay(oneWay);
     if (oneWay === false && returnDate) await this.returnDate.fill(returnDate);
   }
 
