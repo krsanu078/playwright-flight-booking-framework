@@ -1,94 +1,239 @@
-# Flight Booking End-to-End Automation Framework
+# Flight Booking Playwright Test Framework
 
-A **personal learning project**: a Playwright (JavaScript, CommonJS) test framework for a multi-step flight-booking demo. It is a portfolio piece, not professional production experience.
+A JavaScript end-to-end automation framework for a multi-step flight-booking practice application. It demonstrates how to organize Playwright tests with the Page Object Model, reusable fixtures, data-driven scenarios, and a GitHub Actions CI pipeline.
 
-> **Latest local verification:** all 17 tests passed in a full run against the live site. The suite depends on a third-party site, so network or site instability can still cause intermittent failures; see [Known limitations](#known-limitations).
+> **Latest local result:** 17/17 tests passed in a full Chromium run. The tests exercise a live third-party site, so results can still be affected by its availability, response time, or UI changes. GitHub Actions is configured in this repository; check the Actions tab for the result of a particular push or pull request.
+
+## What this project demonstrates
+
+- Organizing browser automation around page objects and reusable Playwright fixtures.
+- Covering a user journey across search, flight selection, passenger details, payment, and booking confirmation.
+- Writing positive and negative UI checks with Playwright's web-first assertions.
+- Separating reusable test data and environment configuration from test scenarios.
+- Running tagged smoke and regression suites.
+- Automating dependency installation, browser setup, test execution, and diagnostic artifact uploads with GitHub Actions.
+
+This is a personal portfolio and learning project, not a production booking system or professional work-history claim.
 
 ## Application under test
 
-<https://www.qapractice.com/flight-booking-scenarios> - a free practice site with a 5-step wizard: Search -> Select flights -> Passengers -> Payment -> Done. It documents stable `data-testid` values, which this project uses.
+The suite targets the [QA Practice flight-booking application](https://www.qapractice.com/flight-booking-scenarios), a third-party five-step demo:
 
-## Architecture and design choices
+**Search → Select flights → Passengers → Payment → Done**
 
-- **Page Object Model** - one class per wizard step in `pages/`; locators and actions only, assertions live in specs.
-- **Fixtures** (`fixtures/test-fixtures.js`) - page objects plus `atResultsStep` / `atPassengerStep` / `atPaymentStep` fixtures that move the wizard forward, so each test starts at the step it cares about without copy-pasted set-up.
-- **Test data** (`utils/test-data.js`) - dummy values; dates are computed relative to today (the site's example date is already in the past).
-- **Config** (`utils/environment.js`, `playwright.config.js`) - `BASE_URL` via environment variable, CI-aware retries/workers.
-- **No sleeps** - only web-first assertions and `expect.poll`.
+The application documents `data-testid` attributes. Page objects use those test IDs for fixed controls and documented prefix patterns for flight rows and selection buttons.
 
-Diagram: [docs/framework-architecture.md](docs/framework-architecture.md). Scenario table: [docs/test-scenarios.md](docs/test-scenarios.md).
+## Technology
 
-## Technology stack
+- JavaScript (CommonJS)
+- Node.js 20 or newer
+- [Playwright Test](https://playwright.dev/docs/intro)
+- npm with a committed lockfile for reproducible CI dependency installation
+- GitHub Actions on Ubuntu with Node.js 22 and Chromium
 
-Playwright Test, JavaScript (CommonJS), Node.js 20+ (CI uses 22), npm, GitHub Actions.
+## Framework design
 
-## Folder structure
+The test code is split into four layers:
 
-```
-.github/workflows/playwright.yml   CI workflow
-pages/                             Page objects (5 wizard steps)
-tests/                             Specs by feature (search, results, passenger, booking flow)
-fixtures/test-fixtures.js          Custom fixtures
-utils/                             test-data.js, environment.js
-docs/                              Architecture diagram, scenario table
+| Layer | Location | Responsibility |
+|---|---|---|
+| Scenarios | `tests/*.spec.js` | Express user-visible behavior and hold the assertions. |
+| Fixtures | `fixtures/test-fixtures.js` | Create page objects, open the application, and provide reusable setup at wizard steps. |
+| Page objects | `pages/*.js` | Keep locators and user actions for each wizard step together. |
+| Shared utilities | `utils/*.js` | Keep environment settings and reusable dummy data outside the scenarios. |
+
+The `searchPage`, `resultsPage`, `passengerPage`, `paymentPage`, and `confirmationPage` fixtures expose page objects. The composable `atResultsStep`, `atPassengerStep`, and `atPaymentStep` fixtures advance through valid setup so tests can begin at the step they need. Each test receives an isolated Playwright context; tests do not depend on execution order or shared login state.
+
+Assertions remain in the specs, rather than being hidden in page objects. Synchronization uses locator actions, web-first assertions, and `expect.poll` instead of fixed sleeps. The `searchCriteria` fixture option can be overridden with `test.use()` when a test needs different search data.
+
+See [docs/framework-architecture.md](docs/framework-architecture.md) for the architecture diagram and further design notes.
+
+## Test coverage
+
+There are **17 automated cases** across four spec files:
+
+| Spec | Coverage |
+|---|---|
+| `tests/flight-search.spec.js` | Search controls, valid one-way search, return-date visibility, empty search, and same-origin/destination validation. |
+| `tests/flight-results.spec.js` | Flight availability and selection, selection-dependent navigation, ascending fare sort, and non-stop filtering. |
+| `tests/passenger-details.spec.js` | Valid passenger details, empty-form validation, and three invalid-email inputs. |
+| `tests/booking-flow.spec.js` | One-way booking and confirmation/PNR, empty-card non-confirmation, and passenger-count total comparison. |
+
+The scenario-by-scenario list and the status of each case are in [docs/test-scenarios.md](docs/test-scenarios.md).
+
+## Repository layout
+
+```text
+.github/workflows/playwright.yml   GitHub Actions workflow
+docs/
+  framework-architecture.md        Architecture diagram and design notes
+  test-scenarios.md                Scenario inventory and coverage status
+fixtures/
+  test-fixtures.js                 Page-object and wizard-step fixtures
+pages/
+  BookingConfirmationPage.js       Confirmation and booking reference
+  FlightResultsPage.js             Results, sorting, filtering, and selection
+  FlightSearchPage.js              Search form and submission
+  PassengerDetailsPage.js          Passenger form
+  PaymentPage.js                   Payment form and displayed total
+tests/
+  booking-flow.spec.js             End-to-end booking scenarios
+  flight-results.spec.js            Results-step scenarios
+  flight-search.spec.js             Search-step scenarios
+  passenger-details.spec.js         Passenger-step scenarios
+utils/
+  environment.js                   Base URL and environment flags
+  test-data.js                     Shared search, passenger, and payment data
+.env.example                       Documented environment-variable example
+.gitignore
+package.json
+package-lock.json
 playwright.config.js
+README.md
 ```
 
-## Prerequisites
+## Prerequisites and setup
 
-Node.js 20 or newer and npm.
-
-## Installation
+Install Node.js 20+ and npm, then from the repository root run:
 
 ```bash
-npm install                      # also creates package-lock.json - commit it (CI uses npm ci)
-npx playwright install chromium  # add --with-deps on Linux
+npm ci
+npx playwright install chromium
 ```
 
-## Running tests
+On Linux machines that need Playwright's browser system packages, use:
+
+```bash
+npx playwright install --with-deps chromium
+```
+
+`npm ci` installs the exact dependency versions recorded in `package-lock.json`. The CI workflow uses the same clean-install command.
+
+## Run the tests
 
 | Goal | Command |
-|------|---------|
-| All tests | `npm test` |
-| Smoke (`@smoke`) | `npm run test:smoke` |
-| Regression (`@regression`) | `npm run test:regression` |
-| Visible browser | `npm run test:headed` |
-| Playwright Inspector (debug) | `npm run test:debug` |
-| List tests without running | `npm run test:list` |
-| Open HTML report | `npm run report` |
-| Single file | `npx playwright test tests/booking-flow.spec.js` |
-| Other browser | `ALL_BROWSERS=true npx playwright test` (adds Firefox + WebKit; install them first) |
-| Other base URL | `BASE_URL=https://example.test npm test` |
+|---|---|
+| Run all tests | `npm test` |
+| Run smoke-tagged tests | `npm run test:smoke` |
+| Run regression-tagged tests | `npm run test:regression` |
+| Run with a visible browser | `npm run test:headed` |
+| Open Playwright Inspector | `npm run test:debug` |
+| List discovered tests without running them | `npm run test:list` |
+| Run one spec file | `npx playwright test tests/booking-flow.spec.js` |
+| Repeat a spec to investigate intermittent failures | `npx playwright test --repeat-each=3 tests/booking-flow.spec.js` |
+| Open the HTML report | `npm run report` |
 
-## Reporting and debugging
+Smoke and regression are test tags, not separate test configurations. Tests can carry more than one tag; the Playwright `--grep` commands select tests by tag.
 
-- **HTML report:** `npm run report` (generated into `playwright-report/`, git-ignored).
-- **Screenshots / videos / traces:** kept only for failed tests, in `test-results/<test-name>/`.
-- **Trace viewer:** `npx playwright show-trace test-results/<test-name>/trace.zip` (or drop the zip on <https://trace.playwright.dev>).
-- **CI artifacts:** GitHub -> Actions -> the run -> *Artifacts* -> download `playwright-report` and `test-results`.
-- **Flaky tests:** reproduce with `npx playwright test --repeat-each=10 <file>`, read the trace to find the missing wait or shared state, and fix the locator/assertion. Don't just raise timeouts or retries.
+### Browser projects
 
-## GitHub Actions
+Chromium is the default project. To also run Firefox and WebKit locally, install their browsers and set `ALL_BROWSERS=true`:
 
-`.github/workflows/playwright.yml` runs on push/PR to `main` and manually (`workflow_dispatch`). It checks out, sets up Node 22 with npm cache, runs `npm ci`, installs Chromium with OS dependencies, runs `npm test`, then uploads the report and `test-results` (14-day retention) even when tests fail. Tests run headless by default; use `npm run test:headed` for a visible local browser. Permissions are `contents: read`. **Requires `package-lock.json` to be committed.** Check the GitHub Actions tab for the latest workflow result.
+```bash
+npx playwright install firefox webkit
+```
 
-## Supported test scenarios
+PowerShell:
 
-17 test cases covering search, results (sort, filter, selection rule), passenger validation and the booking flow (one-way). Full list and status: [docs/test-scenarios.md](docs/test-scenarios.md).
+```powershell
+$env:ALL_BROWSERS = "true"
+npx playwright test
+```
 
-## Known limitations
+macOS/Linux shell:
 
-- The live practice site is outside this project's control. Slow responses, outages, or UI changes can cause intermittent failures; inspect the saved trace and report before treating a failure as a test bug.
-- Some assertions still rest on assumptions flagged in code comments: fare text contains a currency symbol (TC06), non-stop rows contain "non-stop" (TC07), and total text is a single number (TC10).
-- Validation **message text and selectors were not verified**, so negative tests assert that the wizard does *not advance* rather than checking the message. Tighten them after inspecting the DOM (`npx playwright codegen https://www.qapractice.com/flight-booking-scenarios`).
-- Round-trip booking (site TC02) and passenger-count boundaries are not automated.
-- The first listed flight is selected rather than a fixed flight number, because only `GW100` is documented and its route is unknown.
-- Depends on a third-party site being up.
+```bash
+ALL_BROWSERS=true npx playwright test
+```
 
-## Future improvements
+The CI workflow currently installs and runs Chromium only.
 
-Assert real validation messages, add round-trip booking, passenger-count boundary tests, an accessibility check, and a scheduled CI run.
+### Configure the base URL
 
-## What a reviewer can learn here
+`BASE_URL` is the application origin; the booking path is appended by the search page object. The default origin is `https://www.qapractice.com`. For a compatible staging or local deployment:
 
-How POM, fixtures and data separation keep specs short; tag-based suites; relative test data; honest handling of unverified assumptions; and a CI pipeline that always publishes diagnostics.
+PowerShell:
+
+```powershell
+$env:BASE_URL = "https://your-test-host.example"
+npm test
+```
+
+macOS/Linux shell:
+
+```bash
+BASE_URL=https://your-test-host.example npm test
+```
+
+`.env.example` documents the variables, but Playwright does not automatically load `.env` files. Set the environment variable in the shell or your CI environment. Do not put credentials or real payment information in test data.
+
+## Playwright configuration
+
+`playwright.config.js` defines:
+
+- The `tests/` test directory and Chromium project by default.
+- Fully parallel test execution.
+- A 30-second test timeout and 7-second expectation timeout.
+- Two workers and up to two retries in CI; local runs use Playwright's default worker count and no retries.
+- `forbidOnly` in CI to prevent accidentally committed `test.only`.
+- Headless browser execution.
+- A list reporter and an HTML report.
+- Screenshots, video, and traces retained on test failure.
+
+Retries are a CI safeguard, not a substitute for diagnosing flakiness. When a live-site test fails, inspect the trace and page state to distinguish a test issue from a site/network issue.
+
+## Continuous integration
+
+The workflow in `.github/workflows/playwright.yml` runs for:
+
+- Pushes to `main`.
+- Pull requests targeting `main`.
+- Manual runs through `workflow_dispatch`.
+
+The job runs on `ubuntu-latest` and:
+
+1. Checks out the repository.
+2. Sets up Node.js 22 and enables npm dependency caching.
+3. Runs `npm ci`.
+4. Installs Chromium and its Linux dependencies.
+5. Runs the Playwright suite headlessly.
+6. Uploads the HTML report and test results, including failure diagnostics, as GitHub Actions artifacts with 14-day retention.
+
+The workflow uses read-only `contents` permissions. The report and failure-artifact upload steps run unless the workflow is cancelled, so diagnostics remain available when tests fail. Review the run summary and artifacts in GitHub **Actions** to see the CI result for a commit.
+
+## Reports and failure investigation
+
+- `playwright-report/` contains the HTML report. Open it with `npm run report`.
+- `test-results/` contains failed-test screenshots, videos, traces, and error context.
+- To inspect a trace locally, run `npx playwright show-trace <path-to-trace.zip>`.
+- In CI, download the `playwright-report` or `test-results` artifact from the workflow run.
+
+These output folders are ignored by Git. Do not diagnose failures by merely increasing timeouts or retries; use the action log, screenshot, video, and trace to see what the browser was waiting for.
+
+## Known limitations and scope
+
+- The suite depends on a live third-party practice site. Site outages, slow responses, anti-automation changes, or UI changes can cause intermittent failures outside this repository's control.
+- The latest recorded local full run passed 17/17 tests, but a successful local run does not guarantee future local or CI runs will pass.
+- Some assertions rely on the current text format: fare rows contain a supported currency symbol, non-stop flights contain “non-stop”/“nonstop,” and the displayed total contains one numeric amount.
+- Negative validation tests verify that the wizard does not advance; they do not assert exact validation-message text.
+- Round-trip booking (the site's TC02) and passenger-count boundary tests are not automated.
+- The happy path selects the first listed flight rather than asserting against a fixed flight number.
+- The workflow is configured for CI, but do not infer a passing GitHub Actions result from a local run; check the repository's Actions tab for the current status.
+
+## Possible next steps
+
+- Verify and assert exact validation messages.
+- Add round-trip booking and passenger-count boundary coverage.
+- Strengthen fare and total parsing against verified application output.
+- Consider running against a controlled test deployment to reduce dependence on a public third-party site.
+- Add a scheduled CI run if regular monitoring is desired.
+
+## Portfolio summary
+
+This repository demonstrates a maintainable Playwright Test structure, page objects, composable fixtures, tagged test suites, reusable test data, environment-based configuration, browser automation across a multi-step UI flow, and GitHub Actions CI with failure diagnostics. The repository and this README document the work as a personal project; they do not claim professional production experience.
+
+**Resume-ready highlights**
+
+- Created a JavaScript Playwright framework with Page Object Model classes and composable fixtures for a five-step flight-booking journey.
+- Implemented 17 positive and negative UI test cases across search, flight results, passenger validation, payment, and booking confirmation.
+- Integrated GitHub Actions CI for pull requests, pushes to `main`, and manual runs, including clean dependency installation, Chromium setup, and retained failure artifacts.
