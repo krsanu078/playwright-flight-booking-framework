@@ -27,16 +27,18 @@ test.describe('Flight search (Step 1)', () => {
   });
 
   test('TC04 empty From/To does not advance to results', { tag: '@regression' }, async ({ searchPage, resultsPage }) => {
+    await searchPage.setOneWay(true);
+    await searchPage.departureDate.fill(validSearch.departureDate);
     await searchPage.submit();
-    // Negative checks pass instantly, so first re-assert we are still on step 1.
-    await expect(searchPage.searchButton).toBeVisible();
+    await expect(searchPage.fromValidation).toBeVisible();
+    await expect(searchPage.toValidation).toBeVisible();
     await expect(resultsPage.flightRows).toHaveCount(0);
     await expect(resultsPage.sortSelect).toBeHidden();
   });
 
   test('TC05 same origin and destination does not advance', { tag: '@regression' }, async ({ searchPage, resultsPage }) => {
     await searchPage.search({ ...validSearch, from: 'Paris', to: 'Paris' });
-    await expect(searchPage.searchButton).toBeVisible();
+    await expect(searchPage.sameCityValidation).toBeVisible();
     await expect(resultsPage.flightRows).toHaveCount(0);
     await expect(resultsPage.sortSelect).toBeHidden();
   });

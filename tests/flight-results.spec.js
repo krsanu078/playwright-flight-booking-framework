@@ -31,10 +31,9 @@ test.describe('Flight results (Step 2)', () => {
     await resultsPage.filterNonStopOnly();
     await expect(resultsPage.nonStopFilter).toBeChecked();
 
-    // ASSUMPTION (unverified): non-stop rows contain the text "non-stop"/"nonstop".
     await expect.poll(async () => {
       const rows = await resultsPage.getRowTexts();
-      return rows.length > 0 && rows.length <= before && rows.every((t) => /non-?stop/i.test(t));
+      return rows.length > 0 && rows.length <= before && rows.every((t) => /\bnon-stop\b/i.test(t));
     }).toBe(true);
   });
 });

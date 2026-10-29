@@ -6,6 +6,9 @@ class PaymentPage {
     this.cardNumber = page.getByTestId('flight-card-number');
     this.expiry = page.getByTestId('flight-expiry');
     this.cvv = page.getByTestId('flight-cvv');
+    this.cardNumberValidation = page.getByText('Please enter the card number.', { exact: true });
+    this.expiryValidation = page.getByText('Please enter the expiry date.', { exact: true });
+    this.cvvValidation = page.getByText('Please enter the CVV.', { exact: true });
     this.bookButton = page.getByTestId('flight-book');
   }
 
@@ -19,10 +22,7 @@ class PaymentPage {
     await this.bookButton.click();
   }
 
-  /**
-   * Numeric value of the displayed total.
-   * ASSUMPTION (unverified): the total text contains one amount, e.g. "$498.00".
-   */
+  /** Numeric value of the displayed USD total. */
   async getTotalAmount() {
     const text = await this.total.innerText();
     const amount = Number(text.replace(/[^0-9.]/g, ''));

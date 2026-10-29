@@ -6,6 +6,9 @@ class FlightSearchPage {
     this.page = page;
     this.fromSelect = page.getByTestId('flight-from');
     this.toSelect = page.getByTestId('flight-to');
+    this.fromValidation = page.getByText('Please select a departure city.', { exact: true });
+    this.toValidation = page.getByText('Please select a destination city.', { exact: true });
+    this.sameCityValidation = page.getByText('Departure and destination cities cannot be the same.', { exact: true });
     this.departureDate = page.getByTestId('flight-departure-date');
     this.returnDate = page.getByTestId('flight-return-date');
     this.passengers = page.getByTestId('flight-passengers');
@@ -15,7 +18,7 @@ class FlightSearchPage {
   }
 
   async goto() {
-    await this.page.goto(bookingPath, { waitUntil: 'domcontentloaded' });
+    await this.page.goto(bookingPath, { waitUntil: 'commit' });
     await this.searchButton.waitFor({ state: 'visible' });
   }
 

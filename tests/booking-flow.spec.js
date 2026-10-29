@@ -22,7 +22,9 @@ test.describe('Booking flow (Steps 1-5)', () => {
     atPaymentStep, paymentPage, confirmationPage,
   }) => {
     await paymentPage.payAndConfirm();
-    await expect(paymentPage.bookButton).toBeVisible();
+    await expect(paymentPage.cardNumberValidation).toBeVisible();
+    await expect(paymentPage.expiryValidation).toBeVisible();
+    await expect(paymentPage.cvvValidation).toBeVisible();
     await expect(confirmationPage.successHeading).toBeHidden();
   });
 

@@ -2,7 +2,7 @@
 
 A JavaScript end-to-end automation framework for a multi-step flight-booking practice application. It demonstrates how to organize Playwright tests with the Page Object Model, reusable fixtures, data-driven scenarios, and a GitHub Actions CI pipeline.
 
-> **Latest local result:** 17/17 tests passed in a full Chromium run. The tests exercise a live third-party site, so results can still be affected by its availability, response time, or UI changes. GitHub Actions is configured in this repository; check the Actions tab for the result of a particular push or pull request.
+> **Latest headless and headed full-suite runs:** 17/17 tests passed in Chromium. The headed script runs tests serially to avoid overloading the live third-party app; an earlier parallel headed run had four 30-second timeouts. Results can still be affected by site availability, response time, or UI changes. GitHub Actions is configured in this repository; check the Actions tab for the result of a particular push or pull request.
 
 ## What this project demonstrates
 
@@ -116,7 +116,7 @@ npx playwright install --with-deps chromium
 | Run all tests | `npm test` |
 | Run smoke-tagged tests | `npm run test:smoke` |
 | Run regression-tagged tests | `npm run test:regression` |
-| Run with a visible browser | `npm run test:headed` |
+| Run with a visible browser (one worker) | `npm run test:headed` |
 | Open Playwright Inspector | `npm run test:debug` |
 | List discovered tests without running them | `npm run test:list` |
 | Run one spec file | `npx playwright test tests/booking-flow.spec.js` |
@@ -174,13 +174,13 @@ BASE_URL=https://your-test-host.example npm test
 - The `tests/` test directory and Chromium project by default.
 - Fully parallel test execution.
 - A 30-second test timeout and 7-second expectation timeout.
-- Two workers and up to two retries in CI; local runs use Playwright's default worker count and no retries.
+- Two workers in CI; retries are disabled so transient live-site failures remain visible.
 - `forbidOnly` in CI to prevent accidentally committed `test.only`.
 - Headless browser execution.
 - A list reporter and an HTML report.
 - Screenshots, video, and traces retained on test failure.
 
-Retries are a CI safeguard, not a substitute for diagnosing flakiness. When a live-site test fails, inspect the trace and page state to distinguish a test issue from a site/network issue.
+When a live-site test fails, inspect the trace and page state to distinguish a test issue from a site/network issue.
 
 ## Continuous integration
 
@@ -213,8 +213,8 @@ These output folders are ignored by Git. Do not diagnose failures by merely incr
 ## Known limitations and scope
 
 - The suite depends on a live third-party practice site. Site outages, slow responses, anti-automation changes, or UI changes can cause intermittent failures outside this repository's control.
-- The latest recorded local full run passed 17/17 tests, but a successful local run does not guarantee future local or CI runs will pass.
-- Some assertions rely on the current text format: fare rows contain a supported currency symbol, non-stop flights contain “non-stop”/“nonstop,” and the displayed total contains one numeric amount.
+- The latest headless and serial headed local full runs passed 17/17 tests, but a successful local run does not guarantee future local or CI runs will pass.
+- Assertions reflect the application's currently verified display: fares and totals use USD, and non-stop rows are labeled “Non-stop.”
 - Negative validation tests verify that the wizard does not advance; they do not assert exact validation-message text.
 - Round-trip booking (the site's TC02) and passenger-count boundary tests are not automated.
 - The happy path selects the first listed flight rather than asserting against a fixed flight number.

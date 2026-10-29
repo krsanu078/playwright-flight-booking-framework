@@ -14,7 +14,6 @@ module.exports = defineConfig({
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: isCI,
-  retries: isCI ? 2 : 0,
   workers: isCI ? 2 : undefined,
   timeout: 30_000,
   expect: { timeout: 7_000 },

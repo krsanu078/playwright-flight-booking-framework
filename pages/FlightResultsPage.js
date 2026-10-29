@@ -30,11 +30,7 @@ class FlightResultsPage {
     await this.continueButton.click();
   }
 
-  /**
-   * Reads the first currency-prefixed amount from each visible flight row.
-   * ASSUMPTION (unverified): fares are rendered with a $, EUR, GBP or INR symbol.
-   * If that is wrong the error below says so instead of silently passing.
-   */
+  /** Reads the USD fare shown in each visible flight row. */
   async getRowTexts() {
     return this.flightRows.allInnerTexts();
   }
@@ -42,7 +38,7 @@ class FlightResultsPage {
   async getFarePrices() {
     const texts = await this.getRowTexts();
     return texts.map((text) => {
-      const match = text.match(/[$€£₹]\s?([\d,]+(?:\.\d+)?)/);
+      const match = text.match(/\$\s?([\d,]+(?:\.\d+)?)/);
       if (!match) throw new Error(`Could not find a fare in flight row text: ${JSON.stringify(text)}`);
       return Number(match[1].replace(/,/g, ''));
     });
